@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <!-- 关键：添加视口配置，适配移动端触屏 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>鱼头吃方块</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="game-title">鱼头吃方块 🐟</h1>
+        <div class="score-panel">分数: <span id="score">0</span></div>
+        <canvas id="gameCanvas"></canvas>
+        <div class="game-tips">
+            按住屏幕控制鱼头移动 | 吃到方块得分 | 碰到边界游戏结束
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

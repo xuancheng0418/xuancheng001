@@ -1,0 +1,67 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Microsoft YaHei', Arial, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 10px; /* 移动端减少内边距 */
+    touch-action: none; /* 禁用移动端默认的触摸行为（如缩放、滚动），提升触屏响应 */
+}
+
+.game-container {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    padding: 16px; /* 移动端减少内边距 */
+    text-align: center;
+    width: 100%; /* 移动端占满宽度 */
+    max-width: 600px; /* 限制最大宽度 */
+}
+
+.game-title {
+    color: #0288d1;
+    margin-bottom: 12px; /* 移动端减少间距 */
+    font-size: 24px; /* 移动端缩小字体 */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.score-panel {
+    font-size: 18px; /* 移动端缩小字体 */
+    color: #333;
+    margin-bottom: 8px; /* 移动端减少间距 */
+    padding: 6px 12px; /* 移动端缩小内边距 */
+    background: #e1f5fe;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+#gameCanvas {
+    border: 3px solid #0288d1;
+    border-radius: 12px;
+    background: #f0f9ff;
+    width: 100%; /* 移动端占满宽度 */
+    height: auto; /* 自适应高度，保持比例 */
+    max-height: 400px; /* 限制最大高度 */
+}
+
+.game-tips {
+    margin-top: 12px; /* 移动端减少间距 */
+    font-size: 12px; /* 移动端缩小字体 */
+    color: #666;
+    line-height: 1.5;
+}
+
+/* 针对苹果手机的特殊适配（解决刘海屏、底部横条问题） */
+@supports (padding: max(0px)) {
+    body {
+        padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+    }
+}

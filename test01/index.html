@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>国风切水果 - 鱼头包子萝卜版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f8e9d6 0%, #f5e6d3 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 游戏容器 - 国风圆角卡片 */
+        .game-container {
+            position: relative;
+            width: 95vw;
+            height: 95vh;
+            max-width: 450px;
+            max-height: 800px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(140, 100, 60, 0.2);
+            background: #fff;
+            border: 8px solid #e0c8a0;
+        }
+
+        /* 画布容器 - 带国风背景纹理 */
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at top, #faf6ed 0%, #f5f0e6 100%);
+            /* 背景纹理：宣纸质感 */
+            background-image: 
+                linear-gradient(rgba(220, 200, 180, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(220, 200, 180, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* 顶部UI栏 - 国风木质牌匾样式 */
+        .ui-bar {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 10;
+        }
+
+        .ui-card {
+            background: linear-gradient(135deg, #8b5a2b 0%, #6d441e 100%);
+            border-radius: 12px;
+            padding: 10px 18px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 2px solid #e0c8a0;
+        }
+
+        .ui-card h3 {
+            color: #f8e9d6;
+            font-size: 14px;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .ui-card .value {
+            color: #ffd700;
+            font-size: 22px;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+        }
+
+        /* 生命图标 - 和田玉玉佩样式 */
+        .life-container {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .life {
+            width: 28px;
+            height: 28px;
+            /* 玉佩渐变+纹理 */
+            background: linear-gradient(135deg, #7ccd7c 0%, #548b54 100%);
+            border-radius: 50%;
+            box-shadow: 
+                inset 0 2px 3px rgba(255, 255, 255, 0.5),
+                inset 0 -2px 3px rgba(0, 0, 0, 0.2),
+                0 2px 5px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        /* 玉佩福字纹理 */
+        .life::after {
+            content: "福";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .life.lost {
+            /* 破损玉佩样式 */
+            background: linear-gradient(135deg, #b0b0b0 0%, #808080 100%);
+            opacity: 0.6;
+            /* 裂纹纹理 */
+            background-image: 
+                linear-gradient(45deg, transparent 45%, rgba(0, 0, 0, 0.3) 45%, rgba(0, 0, 0, 0.3) 55%, transparent 55%),
+                linear-gradient(135deg, transparent 45%, rgba(0, 0, 0, 0.3) 45%, rgba(0, 0, 0, 0.3) 55%, transparent 55%);
+        }
+
+        /* 漏切计数UI - 新增 */
+        .miss-count-card {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #8b5a2b 0%, #6d441e 100%);
+            border-radius: 12px;
+            padding: 8px 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 2px solid #e0c8a0;
+            z-index: 10;
+        }
+
+        .miss-count-card h3 {
+            color: #f8e9d6;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 3px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .miss-count-card .value {
+            color: #ff6b35;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+        }
+
+        /* 开始按钮 - 国风红木质 */
+        .start-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #c72c41 0%, #971c2f 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 18px 36px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 15;
+            box-shadow: 0 8px 15px rgba(199, 44, 65, 0.3);
+            transition: all 0.3s ease;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .start-btn:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 10px 20px rgba(199, 44, 65, 0.4);
+        }
+
+        /* 游戏结束弹窗 - 国风弹窗 */
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #fff 0%, #faf6ed 100%);
+            border: 6px solid #e0c8a0;
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            z-index: 20;
+            display: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 80%;
+            max-width: 350px;
+        }
+
+        .game-over h2 {
+            color: #c72c41;
+            font-size: 32px;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-over p {
+            color: #8b5a2b;
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+
+        .game-over .final-score {
+            color: #ffd700;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .game-over button {
+            background: linear-gradient(135deg, #8b5a2b 0%, #6d441e 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 24px;
+            font-size: 18px;
+            margin: 0 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .game-over button:hover {
+            background: linear-gradient(135deg, #6d441e 0%, #503015 100%);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 连击提示 - 漂浮文字 */
+        .combo-tip {
+            position: absolute;
+            color: #ff6b35;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+            opacity: 0;
+            transition: all 0.8s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- 游戏画布 -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- 顶部UI -->
+        <div class="ui-bar">
+            <!-- 分数卡片 -->
+            <div class="ui-card">
+                <h3>分数</h3>
+                <div class="value" id="score">0</div>
+            </div>
+            <!-- 生命卡片 -->
+            <div class="ui-card life-container">
+                <h3>生命</h3>
+                <div class="life" id="life1"></div>
+                <div class="life" id="life2"></div>
+                <div class="life" id="life3"></div>
+            </div>
+        </div>
+
+        <!-- 漏切计数卡片 - 新增 -->
+        <div class="miss-count-card">
+            <h3>漏切计数</h3>
+            <div class="value" id="missCount">0/3</div>
+        </div>
+
+        <!-- 开始按钮 -->
+        <button class="start-btn" id="startBtn">开始游戏</button>
+
+        <!-- 游戏结束弹窗 -->
+        <div class="game-over" id="gameOverPanel">
+            <h2>游戏结束</h2>
+            <p>最终分数：<span class="final-score" id="finalScore">0</span></p>
+            <button id="restartBtn">重新开始</button>
+            <button id="exitBtn">退出</button>
+        </div>
+
+        <!-- 连击提示 -->
+        <div class="combo-tip" id="comboTip">×2 连击！</div>
+    </div>
+
+    <script>
+        // ********** 全局变量（极简版，无外部依赖）**********
+        let canvas, ctx;
+        let gameWidth, gameHeight;
+        let score = 0;
+        let lives = 3;
+        let isGameRunning = false;
+        let elements = []; // 鱼头/包子/萝卜元素
+        let touchPoints = []; // 触屏/鼠标轨迹
+        let lastTime = 0;
+        let comboCount = 0; // 连击数
+        let comboTimer = null; // 连击计时器
+        let spawnInterval = 1500; // 元素生成间隔（毫秒）
+        let spawnTimer = null; // 元素生成计时器
+        let difficultyLevel = 1; // 难度等级
+        let steamParticles = []; // 包子蒸汽粒子
+        let missCount = 0; // 漏切计数（包子/萝卜飞出屏幕）- 新增
+        const missLimit = 3; // 漏切上限，达到则扣血 - 新增
+
+        // ********** 元素配置（精美绘制参数）**********
+        const elementConfig = {
+            // 包子：经典褶皱包子（平底+蒸汽，密集褶皱+顶部收口，更逼真）
+            bun: {
+                score: 5,
+                radius: 28,
+                baseColor: '#fff3e0', // 面皮色
+                accentColor: '#d4a017', // 褶皱色
+                fillColor: '#b35c42', // 叉烧馅色
+                speedFactor: 1, // 移动速度因子
+                draw: function (x, y, radius, alpha) { drawBun(x, y, radius, alpha); }
+            },
+            // 萝卜：胡萝卜（长条型，带缨子、纹理、高光）
+            radish: {
+                score: 8,
+                width: 20, // 长条宽度
+                height: 60, // 长条高度
+                baseColor: '#ff6b35', // 萝卜身色
+                accentColor: '#4dab75', // 缨子色
+                fillColor: '#ff8c66', // 高光色
+                speedFactor: 1.1,
+                draw: function (x, y, width, height, alpha) { drawRadish(x, y, width, height, alpha); }
+            },
+            // 鱼头：胖头鱼（大眼睛，带鱼鳞、鱼鳃、高光）
+            fishHead: {
+                score: 0,
+                radius: 32,
+                baseColor: '#b3e0ff', // 鱼身色
+                accentColor: '#8b9dc3', // 鱼鳞色
+                fillColor: '#000', // 鱼眼色
+                speedFactor: 0.9,
+                draw: function (x, y, radius, alpha) { drawFishHead(x, y, radius, alpha); }
+            }
+        };
+
+        // ********** 页面加载完成初始化 **********
+        window.addEventListener('load', () => {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            // 适配容器大小（移动端/电脑端）
+            const container = document.querySelector('.game-container');
+            gameWidth = container.offsetWidth;
+            gameHeight = container.offsetHeight;
+            canvas.width = gameWidth;
+            canvas.height = gameHeight;
+
+            // 绑定事件
+            bindEvents();
+
+            // 初始化UI
+            updateScore();
+            updateLives();
+            updateMissCount(); // 初始化漏切计数UI - 新增
+        });
+
+        // ********** 事件绑定（触屏+鼠标+按钮）**********
+        function bindEvents() {
+            // 开始/重新开始/退出按钮
+            document.getElementById('startBtn').addEventListener('click', startGame);
+            document.getElementById('restartBtn').addEventListener('click', restartGame);
+            document.getElementById('exitBtn').addEventListener('click', exitGame);
+
+            // 触屏事件（微信端核心）
+            canvas.addEventListener('touchstart', (e) => {
+                if (!isGameRunning) return;
+                e.preventDefault(); // 阻止页面滚动
+                const touch = e.touches[0];
+                touchPoints = [{ x: touch.clientX - canvas.offsetLeft, y: touch.clientY - canvas.offsetTop }];
+            });
+
+            canvas.addEventListener('touchmove', (e) => {
+                if (!isGameRunning) return;
+                e.preventDefault();
+                const touch = e.touches[0];
+                const point = { x: touch.clientX - canvas.offsetLeft, y: touch.clientY - canvas.offsetTop };
+                touchPoints.push(point);
+                checkCut(point); // 检测切割
+            });
+
+            canvas.addEventListener('touchend', () => {
+                touchPoints = []; // 清空轨迹
+            });
+
+            // 鼠标事件（电脑端调试）
+            canvas.addEventListener('mousedown', (e) => {
+                if (!isGameRunning) return;
+                touchPoints = [{ x: e.offsetX, y: e.offsetY }];
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isGameRunning || touchPoints.length === 0) return;
+                const point = { x: e.offsetX, y: e.offsetY };
+                touchPoints.push(point);
+                checkCut(point);
+            });
+
+            canvas.addEventListener('mouseup', () => {
+                touchPoints = [];
+            });
+        }
+
+        // ********** 游戏核心逻辑 **********
+        // 开始游戏
+        function startGame() {
+            document.getElementById('startBtn').style.display = 'none';
+            score = 0;
+            lives = 3;
+            comboCount = 0;
+            difficultyLevel = 1;
+            spawnInterval = 1500;
+            steamParticles = []; // 重置蒸汽粒子
+            missCount = 0; // 重置漏切计数 - 新增
+            updateScore();
+            updateLives();
+            updateMissCount(); // 更新漏切计数UI - 新增
+            isGameRunning = true;
+            elements = [];
+            // 启动游戏循环
+            requestAnimationFrame(gameLoop);
+            // 定时生成元素（难度提升时缩短间隔）
+            spawnTimer = setInterval(spawnElement, spawnInterval);
+        }
+
+        // 重新开始
+        function restartGame() {
+            document.getElementById('gameOverPanel').style.display = 'none';
+            clearInterval(spawnTimer); // 清除旧的生成计时器
+            startGame();
+        }
+
+        // 退出游戏
+        function exitGame() {
+            isGameRunning = false;
+            clearInterval(spawnTimer);
+            clearTimeout(comboTimer);
+            document.getElementById('gameOverPanel').style.display = 'none';
+            document.getElementById('startBtn').style.display = 'block';
+            score = 0;
+            lives = 3;
+            comboCount = 0;
+            steamParticles = [];
+            missCount = 0; // 重置漏切计数 - 新增
+            updateScore();
+            updateLives();
+            updateMissCount(); // 更新漏切计数UI - 新增
+            elements = [];
+        }
+
+        // 生成元素（鱼头/包子/萝卜，随机）
+        function spawnElement() {
+            if (!isGameRunning) return;
+            // 元素类型：鱼头概率稍低（1/4），包子和萝卜各占3/8
+            const types = ['bun', 'bun', 'bun', 'radish', 'radish', 'radish', 'fishHead', 'fishHead'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            const config = elementConfig[type];
+
+            // 随机位置（左右边界，避免出界）
+            let x, y;
+            if (type === 'radish') {
+                x = Math.random() * (gameWidth - 2 * config.width) + config.width;
+                y = gameHeight + config.height; // 从屏幕下方生成
+            } else {
+                x = Math.random() * (gameWidth - 2 * config.radius) + config.radius;
+                y = gameHeight + config.radius; // 从屏幕下方生成
+            }
+
+            // 随机速度（向上运动，带左右偏移，难度越高速度越快）
+            const speedY = - (Math.random() * 3 + 2) * config.speedFactor * difficultyLevel;
+            const speedX = (Math.random() - 0.5) * 2 * difficultyLevel;
+
+            // 添加到元素数组
+            const elementData = {
+                type: type,
+                x: x,
+                y: y,
+                config: config,
+                speedX: speedX,
+                speedY: speedY,
+                isCut: false,
+                alpha: 1, // 透明度（切割后消失）
+                vibrate: 0 // 切割震动值
+            };
+            // 补充萝卜/包子的尺寸参数
+            if (type === 'radish') {
+                elementData.width = config.width;
+                elementData.height = config.height;
+            } else {
+                elementData.radius = config.radius;
+            }
+            elements.push(elementData);
+
+            // 包子生成时添加蒸汽粒子
+            if (type === 'bun') {
+                spawnSteamParticles(x, y - config.radius);
+            }
+        }
+
+        // 生成包子蒸汽粒子
+        function spawnSteamParticles(x, y) {
+            // 生成3-5个蒸汽粒子
+            const count = Math.floor(Math.random() * 3) + 3;
+            for (let i = 0; i < count; i++) {
+                steamParticles.push({
+                    x: x + (Math.random() - 0.5) * 20,
+                    y: y + (Math.random() - 0.5) * 10,
+                    radius: Math.random() * 3 + 2,
+                    alpha: Math.random() * 0.5 + 0.3,
+                    speedY: - (Math.random() * 1 + 0.5), // 向上飘
+                    speedX: (Math.random() - 0.5) * 0.5 // 轻微左右飘
+                });
+            }
+        }
+
+        // 检测切割（轨迹与元素碰撞）
+        function checkCut(currentPoint) {
+            if (touchPoints.length < 2) return;
+            const lastPoint = touchPoints[touchPoints.length - 2];
+
+            // 遍历元素（倒序，避免删除元素时索引错乱）
+            for (let i = elements.length - 1; i >= 0; i--) {
+                const element = elements[i];
+                if (element.isCut) continue;
+
+                let isCollide = false;
+                // 不同元素的碰撞检测逻辑
+                if (element.type === 'radish') {
+                    // 长条萝卜：矩形碰撞（简化为包围盒+线段检测）
+                    isCollide = checkLineRectCollision(lastPoint, currentPoint, {
+                        x: element.x - element.width / 2,
+                        y: element.y - element.height / 2,
+                        width: element.width,
+                        height: element.height
+                    });
+                } else {
+                    // 包子/鱼头：圆形碰撞
+                    const distance = getDistanceToLine(lastPoint, currentPoint, element);
+                    isCollide = distance < element.radius;
+                }
+
+                if (isCollide) {
+                    element.isCut = true;
+                    element.vibrate = 5; // 切割震动
+                    handleCut(element); // 处理切割结果
+                    // 切割包子时清除蒸汽粒子
+                    if (element.type === 'bun') {
+                        steamParticles = steamParticles.filter(p => 
+                            Math.hypot(p.x - element.x, p.y - element.y) > element.radius * 2
+                        );
+                    }
+                    break;
+                }
+            }
+        }
+
+        // 计算点到线段的距离（圆形碰撞核心）
+        function getDistanceToLine(p1, p2, circle) {
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            if (length === 0) return Math.hypot(circle.x - p1.x, circle.y - p1.y);
+
+            const t = ((circle.x - p1.x) * dx + (circle.y - p1.y) * dy) / (length * length);
+            const tClamped = Math.max(0, Math.min(1, t));
+            const closestX = p1.x + tClamped * dx;
+            const closestY = p1.y + tClamped * dy;
+            return Math.hypot(circle.x - closestX, circle.y - closestY);
+        }
+
+        // 检测线段与矩形的碰撞（长条萝卜碰撞核心）
+        function checkLineRectCollision(p1, p2, rect) {
+            // 线段的包围盒检测
+            const lineMinX = Math.min(p1.x, p2.x);
+            const lineMaxX = Math.max(p1.x, p2.x);
+            const lineMinY = Math.min(p1.y, p2.y);
+            const lineMaxY = Math.max(p1.y, p2.y);
+
+            if (lineMaxX < rect.x || lineMinX > rect.x + rect.width ||
+                lineMaxY < rect.y || lineMinY > rect.y + rect.height) {
+                return false;
+            }
+
+            // 简化检测：判断线段是否与矩形的四条边相交（或点在矩形内）
+            const rectPoints = [
+                { x: rect.x, y: rect.y },
+                { x: rect.x + rect.width, y: rect.y },
+                { x: rect.x + rect.width, y: rect.y + rect.height },
+                { x: rect.x, y: rect.y + rect.height }
+            ];
+            // 检查点是否在矩形内
+            if (isPointInRect(p1, rect) || isPointInRect(p2, rect)) {
+                return true;
+            }
+            // 检查线段与矩形边相交
+            for (let i = 0; i < 4; i++) {
+                const r1 = rectPoints[i];
+                const r2 = rectPoints[(i + 1) % 4];
+                if (linesIntersect(p1, p2, r1, r2)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 判断点是否在矩形内
+        function isPointInRect(p, rect) {
+            return p.x >= rect.x && p.x <= rect.x + rect.width &&
+                   p.y >= rect.y && p.y <= rect.y + rect.height;
+        }
+
+        // 判断两条线段是否相交
+        function linesIntersect(p1, p2, p3, p4) {
+            const ccw = (a, b, c) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+            return (ccw(p1, p2, p3) * ccw(p1, p2, p4) < 0) && (ccw(p3, p4, p1) * ccw(p3, p4, p2) < 0);
+        }
+
+        // 处理切割结果
+        function handleCut(element) {
+            if (element.type === 'fishHead') {
+                // 切到鱼头：扣1条生命（原有逻辑）
+                lives--;
+                comboCount = 0; // 重置连击
+                updateLives();
+                if (lives <= 0) {
+                    gameOver();
+                }
+            } else {
+                // 切到包子/萝卜：加分（连击双倍）
+                comboCount++;
+                const addScore = comboCount >= 2 ? (element.type === 'bun' ? 5 : 8) * 2 : (element.type === 'bun' ? 5 : 8);
+                score += addScore;
+                updateScore();
+
+                // 连击提示（≥2时显示）
+                if (comboCount >= 2) {
+                    showComboTip();
+                }
+
+                // 重置连击计时器（2秒内没切中则重置）
+                clearTimeout(comboTimer);
+                comboTimer = setTimeout(() => {
+                    comboCount = 0;
+                }, 2000);
+
+                // 难度提升（分数每100分提升一级）
+                const newLevel = Math.floor(score / 100) + 1;
+                if (newLevel > difficultyLevel) {
+                    difficultyLevel = newLevel;
+                    // 缩短元素生成间隔（最低500毫秒）
+                    spawnInterval = Math.max(500, 1500 - (difficultyLevel - 1) * 100);
+                    clearInterval(spawnTimer);
+                    spawnTimer = setInterval(spawnElement, spawnInterval);
+                }
+            }
+        }
+
+        // 处理漏切逻辑（包子/萝卜飞出屏幕）- 新增
+        function handleMiss(element) {
+            // 仅包子/萝卜计入漏切
+            if (element.type === 'bun' || element.type === 'radish') {
+                missCount++;
+                updateMissCount(); // 更新UI
+
+                // 达到漏切上限，扣1条生命
+                if (missCount >= missLimit) {
+                    lives--;
+                    missCount = 0; // 重置漏切计数
+                    updateLives();
+                    updateMissCount(); // 更新UI
+
+                    if (lives <= 0) {
+                        gameOver();
+                    }
+                }
+            }
+            // 鱼头飞出屏幕不处理（不再扣血）
+        }
+
+        // 游戏结束
+        function gameOver() {
+            isGameRunning = false;
+            clearInterval(spawnTimer);
+            clearTimeout(comboTimer);
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOverPanel').style.display = 'block';
+        }
+
+        // ********** UI更新函数 **********
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+        }
+
+        function updateLives() {
+            for (let i = 1; i <= 3; i++) {
+                const life = document.getElementById(`life${i}`);
+                life.classList.toggle('lost', i > lives);
+            }
+        }
+
+        // 新增：更新漏切计数UI
+        function updateMissCount() {
+            document.getElementById('missCount').textContent = `${missCount}/${missLimit}`;
+        }
+
+        // 显示连击提示（漂浮+渐隐）
+        function showComboTip() {
+            const tip = document.getElementById('comboTip');
+            tip.textContent = `×${comboCount} 连击！`;
+            // 随机位置（屏幕中间）
+            tip.style.left = `${gameWidth / 2 - 50}px`;
+            tip.style.top = `${gameHeight / 2 - 100}px`;
+            tip.style.opacity = 1;
+            tip.style.transform = 'translateY(0)';
+            // 漂浮+渐隐
+            setTimeout(() => {
+                tip.style.opacity = 0;
+                tip.style.transform = 'translateY(-30px)';
+            }, 800);
+        }
+
+        // ********** 精美绘制函数（核心：用Canvas画逼真元素）**********
+        // 绘制经典褶皱包子（平底+蒸汽，密集褶皱+顶部收口，更像真实包子）
+        function drawBun(x, y, radius, alpha) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+
+            // 1. 包子阴影（增强立体感）
+            ctx.beginPath();
+            ctx.ellipse(x + 3, y + 3, radius, radius * 0.8, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(140, 100, 60, 0.2)';
+            ctx.fill();
+
+            // 2. 包子主体（平底，圆形主体+底部直线，更饱满）
+            const bunGradient = ctx.createRadialGradient(x, y - radius / 4, 0, x, y, radius);
+            bunGradient.addColorStop(0, '#fffbf5'); // 顶部高光
+            bunGradient.addColorStop(1, '#fff3e0'); // 底色
+            // 绘制平底路径：圆形（裁剪底部）+ 平底直线
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2); // 完整圆形
+            // 裁剪底部，保留平底（用矩形覆盖底部，模拟平底）
+            ctx.fillStyle = bunGradient;
+            ctx.fill();
+            // 绘制平底遮罩（白色，模拟包子放在平面上的效果）
+            ctx.fillStyle = '#fff3e0';
+            ctx.fillRect(x - radius, y, radius * 2, radius * 0.2); // 底部平底
+
+            // 3. 包子轮廓（增强质感）
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#e0c8a0';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            // 底部平底轮廓（深色）
+            ctx.beginPath();
+            ctx.moveTo(x - radius, y);
+            ctx.lineTo(x + radius, y);
+            ctx.strokeStyle = '#d4b886';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 4. 包子密集褶皱（24道径向褶皱，从顶部收口向外扩散，更像真实包子）
+            ctx.strokeStyle = '#d4a017';
+            ctx.lineWidth = 1.2;
+            const centerX = x;
+            const centerY = y - radius / 3; // 顶部收口中心点
+            for (let i = 0; i < 24; i++) {
+                const angle = (i * Math.PI / 12);
+                const endX = centerX + Math.cos(angle) * (radius - 5);
+                const endY = centerY + Math.sin(angle) * (radius - 5);
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY); // 顶部收口点
+                ctx.lineTo(endX, endY); // 褶皱延伸到包子边缘
+                ctx.stroke();
+            }
+
+            // 5. 包子顶部收口（圆形，模拟捏合的收口）
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius / 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#d4a017';
+            ctx.fill();
+
+            // 6. 叉烧馅点缀（褶皱间隙的馅料，更逼真）
+            for (let i = 0; i < 3; i++) {
+                const angle = (i * Math.PI / 1.5);
+                const fillX = centerX + Math.cos(angle) * (radius / 3);
+                const fillY = centerY + Math.sin(angle) * (radius / 3);
+                ctx.beginPath();
+                ctx.arc(fillX, fillY, radius / 8, 0, Math.PI * 2);
+                const fillGradient = ctx.createRadialGradient(fillX, fillY, 0, fillX, fillY, radius / 8);
+                fillGradient.addColorStop(0, '#c76b50'); // 高光
+                fillGradient.addColorStop(1, '#b35c42'); // 底色
+                ctx.fillStyle = fillGradient;
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        // 绘制蒸汽粒子（动态上升的透明气泡）
+        function drawSteamParticles() {
+            // 更新蒸汽粒子位置和透明度
+            for (let i = steamParticles.length - 1; i >= 0; i--) {
+                const p = steamParticles[i];
+                p.x += p.speedX;
+                p.y += p.speedY;
+                p.alpha -= 0.01; // 逐渐透明
+                p.radius *= 0.98; // 逐渐变小
+
+                // 粒子消失则移除
+                if (p.alpha <= 0 || p.radius <= 0.5) {
+                    steamParticles.splice(i, 1);
+                    continue;
+                }
+
+                // 绘制蒸汽粒子（半透明白色圆形，模拟蒸汽）
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // 绘制胡萝卜（长条型，带缨子、纹理、高光、阴影）
+        function drawRadish(x, y, width, height, alpha) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+
+            // 1. 萝卜阴影（长条型阴影）
+            ctx.beginPath();
+            ctx.rect(x - width / 2 + 3, y - height / 2 + 3, width, height);
+            ctx.fillStyle = 'rgba(140, 100, 60, 0.2)';
+            ctx.fill();
+
+            // 2. 萝卜主体（长条型，两端半圆，渐变+纹理）
+            const radishGradient = ctx.createLinearGradient(x - width / 2, y, x + width / 2, y);
+            radishGradient.addColorStop(0, '#ff8c66'); // 高光
+            radishGradient.addColorStop(1, '#ff6b35'); // 底色
+            // 绘制长条矩形（两端半圆）
+            ctx.beginPath();
+            ctx.roundRect(x - width / 2, y - height / 2, width, height, [width / 2, width / 2, width / 2, width / 2]);
+            ctx.fillStyle = radishGradient;
+            ctx.fill();
+            ctx.strokeStyle = '#e04a20';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // 3. 萝卜纹理（竖条，模拟胡萝卜纹理）
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 5; i++) {
+                const offsetX = (i - 2) * (width / 4);
+                ctx.beginPath();
+                ctx.moveTo(x + offsetX, y - height / 2 + 5);
+                ctx.lineTo(x + offsetX, y + height / 2 - 5);
+                ctx.stroke();
+            }
+
+            // 4. 萝卜缨子（3片叶子，带渐变，长在萝卜顶部）
+            ctx.strokeStyle = '#4dab75';
+            ctx.fillStyle = '#66c98f';
+            ctx.lineWidth = 2;
+            const topY = y - height / 2; // 萝卜顶部位置
+            for (let i = 0; i < 3; i++) {
+                const angle = (i * Math.PI / 3) - Math.PI / 2;
+                // 叶子主干
+                ctx.beginPath();
+                ctx.moveTo(x, topY);
+                ctx.lineTo(x + Math.cos(angle) * (height / 3), topY + Math.sin(angle) * (height / 3));
+                ctx.stroke();
+                // 叶子（小弧线）
+                ctx.beginPath();
+                ctx.arc(x + Math.cos(angle) * (height / 4), topY + Math.sin(angle) * (height / 4), 6, angle - Math.PI / 4, angle + Math.PI / 4);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        // 绘制胖头鱼鱼头（大眼睛，带鱼鳞、鱼鳃、高光、阴影）
+        function drawFishHead(x, y, radius, alpha) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+
+            // 1. 鱼头阴影
+            ctx.beginPath();
+            ctx.arc(x + 3, y + 3, radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(100, 120, 140, 0.2)';
+            ctx.fill();
+
+            // 2. 鱼头主体（渐变鱼身，模拟鱼鳞光泽）
+            const fishGradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            fishGradient.addColorStop(0, '#d4e8ff'); // 高光
+            fishGradient.addColorStop(1, '#b3e0ff'); // 底色
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = fishGradient;
+            ctx.fill();
+            ctx.strokeStyle = '#8b9dc3';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // 3. 鱼鳞纹理（菱形网格，模拟鱼鳞）
+            ctx.strokeStyle = 'rgba(139, 157, 195, 0.3)';
+            ctx.lineWidth = 1;
+            const gridSize = radius / 4;
+            for (let i = -3; i < 3; i++) {
+                for (let j = -3; j < 3; j++) {
+                    const px = x + i * gridSize;
+                    const py = y + j * gridSize;
+                    // 菱形
+                    ctx.beginPath();
+                    ctx.moveTo(px, py - gridSize / 2);
+                    ctx.lineTo(px + gridSize / 2, py);
+                    ctx.lineTo(px, py + gridSize / 2);
+                    ctx.lineTo(px - gridSize / 2, py);
+                    ctx.closePath();
+                    ctx.stroke();
+                }
+            }
+
+            // 4. 鱼眼（放大版，带高光，逼真水润感）
+            const eyeRadius = radius / 3; // 眼睛放大：从原来的1/5改为1/3
+            ctx.beginPath();
+            ctx.arc(x + radius / 2, y - radius / 2, eyeRadius, 0, Math.PI * 2);
+            ctx.fillStyle = '#000';
+            ctx.fill();
+            // 鱼眼高光（同步放大）
+            ctx.beginPath();
+            ctx.arc(x + radius / 2 + 3, y - radius / 2 - 3, eyeRadius / 3, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+
+            // 5. 鱼鳃（淡粉色，模拟鱼鳃纹理）
+            ctx.beginPath();
+            ctx.arc(x - radius / 2, y, radius / 3, 0, Math.PI);
+            const gillGradient = ctx.createRadialGradient(x - radius / 2, y, 0, x - radius / 2, y, radius / 3);
+            gillGradient.addColorStop(0, '#ffc0cb'); // 高光
+            gillGradient.addColorStop(1, '#f0a0b0'); // 底色
+            ctx.fillStyle = gillGradient;
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 192, 203, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        // 绘制切割轨迹（金色光带，带渐变，触屏/鼠标轨迹）
+        function drawTouchPath() {
+            if (touchPoints.length < 2) return;
+
+            ctx.save();
+            // 渐变光带
+            const gradient = ctx.createLinearGradient(
+                touchPoints[0].x, touchPoints[0].y,
+                touchPoints[touchPoints.length - 1].x, touchPoints[touchPoints.length - 1].y
+            );
+            gradient.addColorStop(0, '#ffd700');
+            gradient.addColorStop(1, '#ff9900');
+
+            ctx.beginPath();
+            ctx.moveTo(touchPoints[0].x, touchPoints[0].y);
+            for (let i = 1; i < touchPoints.length; i++) {
+                ctx.lineTo(touchPoints[i].x, touchPoints[i].y);
+            }
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+
+            // 只保留最近10个点，优化性能
+            if (touchPoints.length > 10) {
+                touchPoints.shift();
+            }
+            ctx.restore();
+        }
+
+        // ********** 游戏循环（更新+绘制）**********
+        function gameLoop(timestamp) {
+            if (!isGameRunning) return;
+
+            // 清空画布
+            ctx.clearRect(0, 0, gameWidth, gameHeight);
+
+            // 绘制蒸汽粒子（包子专属）
+            drawSteamParticles();
+
+            // 计算时间差（平滑更新）
+            const deltaTime = timestamp - lastTime || 0;
+            lastTime = timestamp;
+
+            // 更新元素位置和状态
+            for (let i = elements.length - 1; i >= 0; i--) {
+                const element = elements[i];
+
+                // 震动效果（切割后轻微震动）
+                if (element.vibrate > 0) {
+                    element.x += (Math.random() - 0.5) * element.vibrate;
+                    element.y += (Math.random() - 0.5) * element.vibrate;
+                    element.vibrate -= 0.5;
+                }
+
+                // 更新位置
+                element.x += element.speedX;
+                element.y += element.speedY;
+
+                // 切割后渐隐消失
+                if (element.isCut) {
+                    element.alpha -= 0.05;
+                    if (element.alpha <= 0) {
+                        elements.splice(i, 1);
+                        continue;
+                    }
+                }
+
+                // 元素飞出屏幕：处理漏切逻辑
+                let isOut = false;
+                if (element.type === 'radish') {
+                    isOut = element.y < -element.height || element.y > gameHeight + element.height;
+                } else {
+                    isOut = element.y < -element.radius || element.y > gameHeight + element.radius;
+                }
+                if (isOut) {
+                    // 处理漏切（仅包子/萝卜）
+                    handleMiss(element); // 新增：调用漏切逻辑
+                    elements.splice(i, 1);
+                }
+
+                // 绘制元素（调用对应绘制函数）
+                if (element.type === 'radish') {
+                    element.config.draw(element.x, element.y, element.width, element.height, element.alpha);
+                } else {
+                    element.config.draw(element.x, element.y, element.radius, element.alpha);
+                }
+            }
+
+            // 绘制切割轨迹
+            drawTouchPath();
+
+            // 继续循环
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+</html>

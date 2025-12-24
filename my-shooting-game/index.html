@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <title>王宣程打飞机</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 新增触屏控制层样式 */
+        .touch-control {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            z-index: 15;
+        }
+        .touch-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(95, 39, 205, 0.7);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            border: 2px solid #fff;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .touch-btn:active {
+            background: rgba(62, 146, 204, 0.9);
+        }
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .game-container {
+                width: 100vw;
+                height: 100vh;
+                border: none;
+                border-radius: 0;
+            }
+            .game-ui {
+                padding: 5px;
+            }
+            .score-panel, .hp-panel {
+                font-size: 14px;
+            }
+            .hp-bar {
+                width: 100px;
+                height: 15px;
+            }
+            .skill-panel button, #pauseBtn {
+                padding: 3px 10px;
+                font-size: 12px;
+            }
+            .screen h1 {
+                font-size: 32px;
+            }
+            .screen button {
+                padding: 10px 20px;
+                font-size: 16px;
+            }
+            .touch-control {
+                bottom: 10px;
+            }
+            .touch-btn {
+                width: 50px;
+                height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- 游戏主画布 -->
+        <canvas id="gameCanvas"></canvas>
+        <!-- 游戏UI -->
+        <div class="game-ui">
+            <div class="score-panel">
+                <span>分数：</span>
+                <span id="score">0</span>
+            </div>
+            <div class="hp-panel">
+                <span>血量：</span>
+                <div class="hp-bar">
+                    <div id="hpProgress"></div>
+                </div>
+            </div>
+            <div class="skill-panel">
+                <button id="skillBtn" disabled>必杀技（冷却中）</button>
+            </div>
+            <button id="pauseBtn">暂停</button>
+        </div>
+        <!-- 开始/结束界面 -->
+        <div id="startScreen" class="screen">
+            <h1>王宣程战斗机</h1>
+            <button id="startBtn">开始游戏</button>
+            <p style="font-size: 14px; margin-top: 20px;">触屏滑动移动 | 点击射击 | 长按必杀技</p>
+        </div>
+        <div id="gameOverScreen" class="screen hidden">
+            <h1>游戏结束</h1>
+            <p>最终分数：<span id="finalScore">0</span></p>
+            <p>历史最高分：<span id="bestScore">0</span></p>
+            <button id="restartBtn">重新开始</button>
+        </div>
+        <!-- 触屏控制按钮（移动端显示） -->
+        <div class="touch-control" id="touchControls">
+            <div class="touch-btn" id="fireBtn">射击</div>
+            <div class="touch-btn" id="skillTouchBtn">必杀技</div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

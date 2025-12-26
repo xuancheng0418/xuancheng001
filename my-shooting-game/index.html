@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -8,18 +8,22 @@
     <title>王宣程打飞机</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* 新增触屏控制层样式 */
-        .touch-control {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            z-index: 15;
+        /* 游戏容器需加相对定位，作为按钮的定位参考 */
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
         }
-        .touch-btn {
+        /* 移除原来的.touch-control容器样式，替换为两个独立按钮样式 */
+        /* 左侧按钮（射击） */
+        #fireBtn {
+            position: absolute;
+            /* 垂直居中核心：top50% + 向上偏移自身50% */
+            top: 50%;
+            transform: translateY(-50%);
+            /* 水平位置：距离左侧20px */
+            left: 20px;
+            /* 按钮基础样式 */
             width: 60px;
             height: 60px;
             border-radius: 50%;
@@ -32,8 +36,33 @@
             border: 2px solid #fff;
             touch-action: manipulation;
             user-select: none;
+            z-index: 15;
         }
-        .touch-btn:active {
+        /* 右侧按钮（必杀技） */
+        #skillTouchBtn {
+            position: absolute;
+            /* 垂直居中核心：和左侧按钮一致 */
+            top: 50%;
+            transform: translateY(-50%);
+            /* 水平位置：距离右侧20px */
+            right: 20px;
+            /* 按钮基础样式（和左侧一致） */
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(95, 39, 205, 0.7);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            border: 2px solid #fff;
+            touch-action: manipulation;
+            user-select: none;
+            z-index: 15;
+        }
+        /* 按钮点击激活状态 */
+        #fireBtn:active, #skillTouchBtn:active {
             background: rgba(62, 146, 204, 0.9);
         }
         /* 移动端适配 */
@@ -65,12 +94,12 @@
                 padding: 10px 20px;
                 font-size: 16px;
             }
-            .touch-control {
-                bottom: 10px;
-            }
-            .touch-btn {
+            /* 移动端按钮尺寸缩小，间距微调 */
+            #fireBtn, #skillTouchBtn {
                 width: 50px;
                 height: 50px;
+                left: 15px; /* 左侧按钮距离左边更近 */
+                right: 15px; /* 右侧按钮距离右边更近 */
             }
         }
     </style>
@@ -108,11 +137,9 @@
             <p>历史最高分：<span id="bestScore">0</span></p>
             <button id="restartBtn">重新开始</button>
         </div>
-        <!-- 触屏控制按钮（移动端显示） -->
-        <div class="touch-control" id="touchControls">
-            <div class="touch-btn" id="fireBtn">射击</div>
-            <div class="touch-btn" id="skillTouchBtn">必杀技</div>
-        </div>
+        <!-- 触屏控制按钮（移除原来的touch-control容器，直接放两个按钮） -->
+        <div id="fireBtn">射击</div>
+        <div id="skillTouchBtn">必杀技</div>
     </div>
 
     <script src="game.js"></script>

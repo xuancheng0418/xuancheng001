@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>精致打飞机游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #00001a 0%, #000000 100%);
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 900px;
+            height: 700px;
+            background-color: #080826;
+            border: 4px solid #00e5ff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.6), 0 0 80px rgba(0, 255, 255, 0.2);
+            max-width: 100vw;
+            max-height: 100vh;
+            aspect-ratio: 9/7;
+        }
+
+        #game-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(30, 30, 80, 0.8) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(50, 50, 120, 0.8) 0%, transparent 20%),
+                radial-gradient(circle at 50% 50%, rgba(40,40,100,0.5) 0%, transparent 30%),
+                linear-gradient(
+                    to bottom,
+                    #080826 0%,
+                    #151540 25%,
+                    #222260 50%,
+                    #151540 75%,
+                    #080826 100%
+                );
+            background-size: 100% 50%;
+            animation: bgScroll 30s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes bgScroll {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+        }
+
+        .star {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            opacity: 0.4;
+            box-shadow: 0 0 2px currentColor;
+            animation: starTwinkle 6s linear infinite;
+            z-index: 1;
+        }
+
+        @keyframes starTwinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .meteor {
+            position: absolute;
+            width: 120px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #ffffff, transparent);
+            border-radius: 50%;
+            animation: meteorFly linear infinite;
+            z-index: 2;
+            box-shadow: 0 0 15px #ffffff, 0 0 25px #00ffff;
+        }
+
+        @keyframes meteorFly {
+            0% { 
+                transform: translateX(-100px) rotate(15deg);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { 
+                transform: translateX(calc(100% + 100px)) rotate(15deg);
+                opacity: 0;
+            }
+        }
+
+        .player {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            transition: none;
+            z-index: 10;
+            filter: drop-shadow(0 0 20px #00ffff) drop-shadow(0 0 35px rgba(0,255,255,0.3)) brightness(1.2);
+            image-rendering: pixelated;
+        }
+
+        .player.invincible {
+            animation: invincibleBlink 0.4s ease-in-out infinite;
+            filter: drop-shadow(0 0 25px #ffff00) drop-shadow(0 0 40px rgba(255,255,0,0.4)) brightness(1.3);
+        }
+
+        @keyframes invincibleBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .invincible-notice {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffff00;
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px #ffff00;
+            z-index: 30;
+            animation: fadeOut 2s ease-out forwards;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: translateX(-50%) scale(1); }
+        }
+
+        .enemy {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            transition: none;
+            z-index: 5;
+            filter: drop-shadow(0 0 12px #ff4444) drop-shadow(0 0 20px rgba(255,68,68,0.3)) brightness(1.15);
+            image-rendering: pixelated;
+        }
+
+        .boss {
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            transition: none;
+            z-index: 8;
+            filter: drop-shadow(0 0 20px #ff8800) brightness(1.1) contrast(1.1);
+            animation: bossPulse 2.5s ease-in-out infinite;
+            image-rendering: pixelated;
+        }
+
+        @keyframes bossPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        .boss-health-bar-container {
+            position: absolute;
+            width: 250px;
+            height: 18px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 3px solid #ff8800;
+            border-radius: 10px;
+            overflow: hidden;
+            z-index: 9;
+            top: -20px;
+            left: 0;
+            box-shadow: 0 0 8px #ff8800;
+        }
+
+        .boss-health-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, #ff0000, #ff8800, #ffdd00);
+            background-position: center;
+            transition: width 0.2s ease;
+            border-radius: 4px;
+            box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+
+        /* 己方飞机弹道视觉效果升级 */
+        .player-bullet {
+            position: absolute;
+            width: 15px;  
+            height: 30px; 
+            transition: none;
+            z-index: 6;
+            background: linear-gradient(to top, #00e5ff, #00ffff, #ffffff);
+            border-radius: 50% 50% 8px 8px;
+            filter: drop-shadow(0 0 5px #00e5ff) drop-shadow(0 0 10px #00ffff);
+            box-shadow: inset 0 0 5px rgba(255,255,255,0.9), 0 0 8px #00e5ff;
+            animation: bulletTrail 0.15s linear infinite;
+            image-rendering: pixelated;
+        }
+
+        /* 弹道尾迹闪烁动画 */
+        @keyframes bulletTrail {
+            0%, 100% { box-shadow: inset 0 0 5px rgba(255,255,255,0.9), 0 0 8px #00e5ff; }
+            50% { box-shadow: inset 0 0 8px rgba(255,255,255,1), 0 0 12px #00ffff; }
+        }
+
+        .enemy-bullet {
+            position: absolute;
+            width: 25px;
+            height: 50px;
+            transition: none;
+            z-index: 6;
+            filter: drop-shadow(0 0 8px #ff4444);
+            filter: hue-rotate(80deg);
+            box-shadow: inset 0 0 3px rgba(255,255,255,0.5);
+            image-rendering: pixelated;
+        }
+
+        /* BOSS弹道样式同步优化 */
+        .boss-bullet {
+            position: absolute;
+            width: 22px;
+            height: 42px;
+            transition: none;
+            z-index: 7;
+            filter: drop-shadow(0 0 12px #ff8800);
+            background: radial-gradient(circle, #ffdd00 0%, #ff8800 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(255,255,0,0.8), 0 0 10px rgba(255,136,0,0.8);
+        }
+
+        .explosion {
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            z-index: 20;
+            animation: explosion 0.7s ease-out forwards;
+            background: radial-gradient(circle, 
+                rgba(255,255,255,1) 0%, 
+                rgba(255,200,0,1) 40%,
+                rgba(255,180,0,1) 50%, 
+                rgba(255,80,0,1) 70%, 
+                rgba(200,0,0,0.8) 85%, 
+                rgba(0,0,0,0) 100%);
+            box-shadow: 0 0 30px rgba(255, 100, 0, 0.8);
+            transform-origin: center;
+        }
+
+        @keyframes explosion {
+            0% { transform: scale(0.1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1.3); opacity: 0; box-shadow: 0 0 0 rgba(255, 100, 0, 0); }
+        }
+
+        .damage-notice {
+            position: absolute;
+            color: #ff4444;
+            font-size: 26px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: 0 0 15px #ff4444;
+            z-index: 30;
+            animation: damageFloat 1s ease-out forwards;
+        }
+
+        @keyframes damageFloat {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-60px); }
+        }
+
+        #game-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffffff;
+            font-size: 48px;
+            text-align: center;
+            display: none;
+            text-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000;
+            z-index: 30;
+            animation: blink 1s infinite;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 22px 42px;
+            border-radius: 12px;
+            border: 2px solid #ff4444;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 25;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+        }
+
+        .hud-item {
+            color: #ffffff;
+            font-size: 24px;
+            text-shadow: 0 0 8px #00ffff;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 18px;
+            border-radius: 24px;
+            border: 2px solid #00ffff;
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
+        }
+
+        .player-score {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .player-name {
+            font-size: 20px;
+            color: #ffdd00;
+            margin-bottom: 5px;
+        }
+
+        #health-container {
+            display: flex;
+            gap: 10px;
+            padding: 5px 10px;
+        }
+
+        .health-heart {
+            width: 32px;
+            height: 32px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ff4444"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>');
+            background-size: 100% 100%;
+            filter: drop-shadow(0 0 8px #ff4444);
+            transition: all 0.3s ease;
+        }
+
+        .health-heart.empty {
+            filter: grayscale(1) opacity(0.3) drop-shadow(0 0 2px #666);
+            transform: scale(0.8) rotate(-5deg);
+        }
+
+        #level-up {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffff00;
+            font-size: 40px;
+            font-weight: bold;
+            text-shadow: 0 0 20px #ffff00;
+            display: none;
+            animation: levelUp 1.5s forwards;
+            z-index: 30;
+            background: rgba(0,0,0,0.7);
+            padding:12px 35px;
+            border-radius: 24px;
+            border: 2px solid #ffff00;
+        }
+
+        @keyframes levelUp {
+            0% { opacity: 0; transform: translateX(-50%) scale(0.9); }
+            50% { opacity: 1; transform: translateX(-50%) scale(1.2); }
+            100% { opacity: 0; transform: translateX(-50%) scale(1); }
+        }
+
+        /* 强制隐藏触屏控制区（去除圆圈） */
+        #touch-control {
+            display: none !important;
+        }
+
+        /* 结算界面+按钮交互 终极质感升级 */
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(10,0,30,0.95) 100%);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            backdrop-filter: blur(5px);
+            padding: 20px;
+        }
+        #game-over h1 {
+            font-size: 52px;
+            margin-bottom: 25px;
+            text-shadow: 0 0 20px #ff4444, 0 0 40px #ff0000;
+            letter-spacing: 2px;
+        }
+        .result-container {
+            display: flex;
+            justify-content: space-around;
+            width: 90%;
+            max-width: 600px;
+            margin: 15px 0 35px;
+            align-items: center;
+            background: rgba(0,0,0,0.6);
+            padding: 25px;
+            border-radius: 20px;
+            border: 2px solid rgba(0,255,255,0.4);
+            box-shadow: 0 0 30px rgba(0,255,255,0.2);
+        }
+        .player-result {
+            text-align: center;
+            padding: 0 20px;
+        }
+        .player-result h2 {
+            font-size: 26px;
+            color: #ffdd00;
+            text-shadow: 0 0 10px #ffdd00;
+            margin-bottom: 12px;
+        }
+        .result-player-img {
+            width: 180px;
+            height: 180px;
+            margin: 10px 0;
+            filter: drop-shadow(0 0 25px #00ffff);
+            transition: all 0.5s ease;
+            image-rendering: pixelated;
+        }
+        /* 胜利方飞机放大样式 */
+        .result-player-img.winner {
+            width: 220px;
+            height: 220px;
+            filter: drop-shadow(0 0 30px #ffff00) drop-shadow(0 0 50px #ffdd00);
+            animation: winnerPulse 1.5s ease-in-out infinite;
+        }
+        /* 胜利方飞机脉动动画 */
+        @keyframes winnerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        /* 庆祝特效 - 星星粒子 */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #ffff00;
+            border-radius: 50%;
+            opacity: 0.8;
+            pointer-events: none;
+            animation: confettiFall 3s ease-in-out infinite;
+        }
+        /* 星星下落动画 */
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(-50px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(700px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        .player-result h3 {
+            font-size: 22px;
+            color: #fff;
+            text-shadow: 0 0 8px #00ffff;
+        }
+        .winner-text {
+            font-size: 50px;
+            color: #ffff00;
+            text-shadow: 0 0 25px #ffff00, 0 0 50px #ffdd00;
+            margin: 10px 0 35px;
+            letter-spacing: 3px;
+            font-weight: bold;
+            animation: winnerTextGlow 1.5s ease-in-out infinite;
+        }
+        /* 胜利文字发光动画 */
+        @keyframes winnerTextGlow {
+            0%, 100% { text-shadow: 0 0 25px #ffff00, 0 0 50px #ffdd00; }
+            50% { text-shadow: 0 0 40px #ffff00, 0 0 80px #ffdd00, 0 0 100px #ff8800; }
+        }
+        .restart-btn {
+            padding: 18px 50px;
+            font-size: 26px;
+            background: linear-gradient(90deg, #00ffff 0%, #0088ff 100%);
+            border: none;
+            border-radius: 50px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(0,255,255,0.6), inset 0 0 10px rgba(255,255,255,0.5);
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        }
+        .restart-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 35px rgba(0,255,255,0.8), inset 0 0 15px rgba(255,255,255,0.7);
+        }
+        .restart-btn:active {
+            transform: scale(0.98);
+            box-shadow: 0 0 15px rgba(0,255,255,0.6), inset 0 0 8px rgba(255,255,255,0.5);
+        }
+
+        /* 响应式终极适配优化 */
+        @media (max-width: 900px) or (max-height: 700px) {
+            .hud-item { font-size: 19px; padding: 5px 10px; }
+            .health-heart { width: 26px; height: 26px; }
+            .result-player-img { width: 120px; height: 120px; }
+            .result-player-img.winner { width: 160px; height: 160px; }
+            .winner-text { font-size: 36px; }
+            .restart-btn { padding:15px 40px; font-size:22px; }
+            #game-over h1 { font-size:42px; }
+            .player-result h2 { font-size:22px; }
+            .player-result h3 { font-size:18px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="game-bg"></div>
+        <div id="hud">
+            <div class="hud-item player-score">
+                <div class="player-name">小十月</div>
+                <div>分数: <span id="score1">0</span></div>
+            </div>
+            <div class="hud-item" id="health-container">
+                <div class="health-heart" id="heart1"></div>
+                <div class="health-heart" id="heart2"></div>
+            </div>
+            <div class="hud-item player-score">
+                <div class="player-name">阳阳</div>
+                <div>分数: <span id="score2">0</span></div>
+            </div>
+        </div>
+        
+        <div id="game-message">复活中...</div>
+        <div id="level-up">等级提升!</div>
+        <div id="touch-control"></div>
+        
+        <div id="game-over">
+            <h1>游戏结束</h1>
+            <div class="result-container">
+                <div class="player-result">
+                    <h2>小十月</h2>
+                    <div class="result-player-img" id="player1-img" style="background-image: url('assets/player1.png'); background-size: 100% 100%;"></div>
+                    <h3>最终得分: <span id="final-score1">0</span></h3>
+                </div>
+                <div class="player-result">
+                    <h2>阳阳</h2>
+                    <div class="result-player-img" id="player2-img" style="background-image: url('assets/player2.png'); background-size: 100% 100%;"></div>
+                    <h3>最终得分: <span id="final-score2">0</span></h3>
+                </div>
+            </div>
+            <div class="winner-text" id="winner-text"></div>
+            <button class="restart-btn" onclick="restartGame()">重新开始</button>
+        </div>
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const gameMessage = document.getElementById('game-message');
+        const score1Display = document.getElementById('score1');
+        const score2Display = document.getElementById('score2');
+        const heart1 = document.getElementById('heart1');
+        const heart2 = document.getElementById('heart2');
+        const levelUpText = document.getElementById('level-up');
+        const touchControl = document.getElementById('touch-control');
+        const gameOverPanel = document.getElementById('game-over');
+        const finalScore1 = document.getElementById('final-score1');
+        const finalScore2 = document.getElementById('final-score2');
+        const winnerText = document.getElementById('winner-text');
+        const player1Img = document.getElementById('player1-img');
+        const player2Img = document.getElementById('player2-img');
+        
+        let containerWidth = gameContainer.offsetWidth;
+        let containerHeight = gameContainer.offsetHeight;
+        
+        let player = null;
+        let currentPlayerType = 'player1';
+        let playerAlive = true;
+        let isInvincible = false;
+        let score1 = 0;
+        let score2 = 0;
+        let level = 1;
+        let health = 2;
+        const maxHealth = 2;
+        let deathCount = 0;
+        
+        let enemySpeed = 3;
+        let bossSpeed = 1;
+        let enemySpawnRate = 1500;
+        let bossSpawnRate = 10000;
+        let enemyShootRate = 3000;
+        let bossShootRate = 1200; 
+        // BOSS弹道基础速度
+        let bossBulletSpeed = 4;  
+        
+        // 标记是否有BOSS存活
+        let hasBossAlive = false;
+        // BOSS存活期间已刷新的小飞机数量
+        let enemySpawnedDuringBoss = 0;
+        // BOSS存活期间小飞机最大刷新数量
+        const maxEnemyDuringBoss = 2;
+        
+        let touchActive = false;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let playerPosX = 0;
+        let playerPosY = 0;
+        
+        let enemySpawnInterval;
+        let bossSpawnInterval;
+        let enemyShootInterval;
+        let bossShootInterval;
+        let gameLoop;
+        let invincibleTimer = null;
+        // 新增：己方子弹发射间隔（控制发射频率）
+        let playerShootInterval = null;
+        // 新增：己方子弹飞行速度（控制移动速度）
+        const playerBulletSpeed = 7; // 从10降低到7
+        
+        window.addEventListener('resize', () => {
+            containerWidth = gameContainer.offsetWidth;
+            containerHeight = gameContainer.offsetHeight;
+        });
+
+        function initStars() {
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                const size = Math.random() * 3 + 1;
+                const x = Math.random() * containerWidth;
+                const y = Math.random() * containerHeight;
+                const duration = Math.random() * 5 + 2;
+                
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.left = `${x}px`;
+                star.style.top = `${y}px`;
+                star.style.animationDuration = `${duration}s`;
+                
+                gameContainer.appendChild(star);
+            }
+            
+            setInterval(() => {
+                const meteor = document.createElement('div');
+                meteor.className = 'meteor';
+                
+                const y = Math.random() * containerHeight * 0.8;
+                const duration = Math.random() * 5 + 3;
+                
+                meteor.style.top = `${y}px`;
+                meteor.style.animationDuration = `${duration}s`;
+                
+                gameContainer.appendChild(meteor);
+                
+                setTimeout(() => {
+                    meteor.remove();
+                }, duration * 1000);
+            }, Math.random() * 5000 + 5000);
+        }
+
+        function setInvincible(enable) {
+            isInvincible = enable;
+            
+            if (player) {
+                player.classList.toggle('invincible', enable);
+            }
+            
+            if (enable) {
+                const notice = document.createElement('div');
+                notice.className = 'invincible-notice';
+                notice.textContent = '无敌状态! 2秒';
+                gameContainer.appendChild(notice);
+                
+                invincibleTimer = setTimeout(() => {
+                    setInvincible(false);
+                    notice.remove();
+                }, 2000);
+            } else {
+                if (invincibleTimer) {
+                    clearTimeout(invincibleTimer);
+                    invincibleTimer = null;
+                }
+            }
+        }
+
+        function initGame() {
+            resetGameState();
+            initStars();
+            createPlayer();
+            setInvincible(true);
+            initControls();
+            
+            enemySpawnInterval = setInterval(spawnEnemy, enemySpawnRate);
+            bossSpawnInterval = setInterval(spawnBoss, bossSpawnRate);
+            enemyShootInterval = setInterval(enemyShoot, enemyShootRate);
+            bossShootInterval = setInterval(bossShoot, bossShootRate);
+            gameLoop = setInterval(updateGame, 20);
+            // 修改1：降低子弹发射频率（从500ms改为700ms）
+            playerShootInterval = setInterval(shootBullet, 700);
+        }
+        
+        function resetGameState() {
+            // 清除庆祝特效
+            document.querySelectorAll('.confetti').forEach(el => el.remove());
+            // 重置飞机样式
+            player1Img.classList.remove('winner');
+            player2Img.classList.remove('winner');
+            // 重置BOSS期间小飞机计数
+            enemySpawnedDuringBoss = 0;
+            
+            document.querySelectorAll('.enemy, .boss, [data-is-boss], .player-bullet, .enemy-bullet, .boss-bullet, .explosion, .invincible-notice, .damage-notice').forEach(el => el.remove());
+            
+            player = null;
+            currentPlayerType = 'player1';
+            playerAlive = true;
+            isInvincible = false;
+            score1 = 0;
+            score2 = 0;
+            level = 1;
+            health = 2;
+            deathCount = 0;
+            hasBossAlive = false; // 重置BOSS标记
+            
+            score1Display.textContent = '0';
+            score2Display.textContent = '0';
+            heart1.classList.remove('empty');
+            heart2.classList.remove('empty');
+            gameOverPanel.style.display = 'none';
+            
+            enemySpeed = 3;
+            bossSpeed = 1;
+            enemySpawnRate = 1500;
+            bossSpawnRate = 10000;
+            enemyShootRate = 3000;
+            bossShootRate = 1200;
+            bossBulletSpeed = 4; // 重置BOSS弹道速度
+            
+            // 清除子弹发射定时器
+            if (playerShootInterval) {
+                clearInterval(playerShootInterval);
+                playerShootInterval = null;
+            }
+        }
+        
+        function restartGame() {
+            clearInterval(gameLoop);
+            clearInterval(enemySpawnInterval);
+            clearInterval(bossSpawnInterval);
+            clearInterval(enemyShootInterval);
+            clearInterval(bossShootInterval);
+            if (playerShootInterval) {
+                clearInterval(playerShootInterval);
+            }
+            initGame();
+        }
+
+        function initControls() {
+            gameContainer.addEventListener('mousemove', (e) => {
+                if (!playerAlive) return;
+                movePlayer(e.clientX, e.clientY);
+            });
+            
+            touchControl.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touchActive = true;
+                const touch = e.touches[0];
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+                playerPosX = parseFloat(player.style.left) || 0;
+                playerPosY = parseFloat(player.style.top) || 0;
+            });
+            
+            touchControl.addEventListener('touchmove', (e) => {
+                if (!playerAlive || !touchActive) return;
+                e.preventDefault();
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - touchStartX;
+                const deltaY = touch.clientY - touchStartY;
+                
+                movePlayer(
+                    touchStartX - gameContainer.getBoundingClientRect().left + playerPosX + deltaX,
+                    touchStartY - gameContainer.getBoundingClientRect().top + playerPosY + deltaY
+                );
+            });
+            
+            touchControl.addEventListener('touchend', () => {
+                touchActive = false;
+            });
+            
+            document.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+            }, { passive: false });
+        }
+
+        function movePlayer(clientX, clientY) {
+            const rect = gameContainer.getBoundingClientRect();
+            const x = clientX - rect.left - player.offsetWidth / 2;
+            const y = clientY - rect.top - player.offsetHeight / 2;
+
+            const clampedX = Math.max(0, Math.min(x, containerWidth - player.offsetWidth));
+            const clampedY = Math.max(0, Math.min(y, containerHeight - player.offsetHeight));
+
+            player.style.left = `${clampedX}px`;
+            player.style.top = `${clampedY}px`;
+        }
+
+        function createPlayer() {
+            if (player) {
+                player.remove();
+            }
+            
+            health = maxHealth;
+            updateHealthDisplay();
+
+            player = document.createElement('div');
+            player.className = 'player';
+            player.style.left = `${(containerWidth - 120) / 2}px`;
+            player.style.bottom = '20px';
+            player.style.backgroundImage = `url('assets/${currentPlayerType}.png')`;
+            player.style.backgroundSize = '100% 100%';
+            gameContainer.appendChild(player);
+            
+            playerAlive = true;
+            setInvincible(true);
+        }
+
+        function updateHealthDisplay() {
+            heart1.classList.toggle('empty', health < 1);
+            heart2.classList.toggle('empty', health < 2);
+        }
+
+        function showDamageNotice(x, y) {
+            const notice = document.createElement('div');
+            notice.className = 'damage-notice';
+            notice.textContent = '-1';
+            notice.style.left = `${x}px`;
+            notice.style.top = `${y}px`;
+            
+            gameContainer.appendChild(notice);
+            
+            setTimeout(() => {
+                notice.remove();
+            }, 1000);
+        }
+
+        function spawnEnemy() {
+            // BOSS存活时限制小飞机刷新数量（不超过2架）
+            if (hasBossAlive) {
+                if (enemySpawnedDuringBoss >= maxEnemyDuringBoss) {
+                    return; // 达到最大数量，停止刷新
+                }
+                enemySpawnedDuringBoss++; // 计数+1
+            }
+            
+            const enemyTypes = ['enemy1', 'enemy2'];
+            const randomType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+            
+            const enemy = document.createElement('div');
+            enemy.className = 'enemy';
+            enemy.dataset.type = randomType;
+            enemy.dataset.health = 1;
+            
+            const randomX = Math.random() * (containerWidth - 100);
+            enemy.style.left = `${randomX}px`;
+            enemy.style.top = '-100px';
+            enemy.style.backgroundImage = `url('assets/${randomType}.png')`;
+            enemy.style.backgroundSize = '100% 100%';
+            
+            gameContainer.appendChild(enemy);
+        }
+
+        function spawnBoss() {
+            // 有BOSS存活时不重复生成
+            if (hasBossAlive) return;
+            
+            const bossTypes = ['enemy3', 'enemy4'];
+            const randomBoss = bossTypes[Math.floor(Math.random() * bossTypes.length)];
+            
+            const bossContainer = document.createElement('div');
+            bossContainer.style.position = 'absolute';
+            bossContainer.style.width = '250px';
+            bossContainer.style.height = '250px';
+            bossContainer.dataset.isBoss = true;
+            
+            const boss = document.createElement('div');
+            boss.className = 'boss';
+            boss.dataset.type = randomBoss;
+            // BOSS血量提升到14点
+            boss.dataset.health = 14; 
+            const maxBossHealth = 14; // 同步修改最大血量
+            
+            const bossHealthBarContainer = document.createElement('div');
+            bossHealthBarContainer.className = 'boss-health-bar-container';
+            
+            const bossHealthBar = document.createElement('div');
+            bossHealthBar.className = 'boss-health-bar';
+            
+            bossHealthBarContainer.appendChild(bossHealthBar);
+            bossContainer.appendChild(bossHealthBarContainer);
+            bossContainer.appendChild(boss);
+            
+            const bossX = (containerWidth - 250) / 2;
+            bossContainer.style.left = `${bossX}px`;
+            bossContainer.style.top = '-250px';
+            
+            boss.style.backgroundImage = `url('assets/${randomBoss}.png')`;
+            boss.style.backgroundSize = '100% 100%';
+            
+            // 赋值正确的最大血量
+            bossContainer.dataset.maxHealth = maxBossHealth;
+            bossContainer.dataset.currentHealth = maxBossHealth;
+            
+            gameContainer.appendChild(bossContainer);
+            hasBossAlive = true; // 标记有BOSS存活
+            // 重置BOSS期间小飞机计数（新BOSS刷新时清零）
+            enemySpawnedDuringBoss = 0;
+        }
+
+        function shootBullet() {
+            if (!playerAlive) return;
+            
+            const bullet1 = createBullet(-20);
+            const bullet2 = createBullet(20);
+            
+            gameContainer.appendChild(bullet1);
+            gameContainer.appendChild(bullet2);
+        }
+
+        function createBullet(offset) {
+            const bullet = document.createElement('div');
+            bullet.className = 'player-bullet';
+            
+            const playerX = parseFloat(player.style.left) + player.offsetWidth / 2;
+            const playerY = parseFloat(player.style.top);
+            
+            // 适配缩小后的子弹位置
+            bullet.style.left = `${playerX - bullet.offsetWidth / 2 + offset}px`;
+            bullet.style.top = `${playerY - bullet.offsetHeight}px`;
+            bullet.style.backgroundSize = '100% 100%';
+            
+            return bullet;
+        }
+
+        function enemyShoot() {
+            const enemies = document.querySelectorAll('.enemy');
+            if (enemies.length === 0 || !playerAlive) return;
+            
+            const randomEnemy = enemies[Math.floor(Math.random() * enemies.length)];
+            if (!randomEnemy) return;
+            
+            const bullet = document.createElement('div');
+            bullet.className = 'enemy-bullet';
+            
+            const enemyX = parseFloat(randomEnemy.style.left) + randomEnemy.offsetWidth / 2;
+            const enemyY = parseFloat(randomEnemy.style.top) + randomEnemy.offsetHeight;
+            
+            bullet.style.left = `${enemyX - bullet.offsetWidth / 2}px`;
+            bullet.style.top = `${enemyY}px`;
+            bullet.style.backgroundImage = "url('assets/bullet.png')";
+            bullet.style.backgroundSize = '100% 100%';
+            bullet.style.filter = 'hue-rotate(90deg)';
+            
+            gameContainer.appendChild(bullet);
+        }
+
+        function bossShoot() {
+            const bossContainers = document.querySelectorAll('[data-is-boss]');
+            if (bossContainers.length === 0 || !playerAlive) return;
+            
+            bossContainers.forEach(bossContainer => {
+                const boss = bossContainer.querySelector('.boss');
+                if (!boss) return;
+                
+                const bossX = parseFloat(bossContainer.style.left) + bossContainer.offsetWidth / 2;
+                const bossY = parseFloat(bossContainer.style.top) + bossContainer.offsetHeight;
+                
+                // BOSS弹道发射角度（±50°）
+                const angles = [-50, 50];
+                angles.forEach(angle => {
+                    const bullet = document.createElement('div');
+                    bullet.className = 'boss-bullet';
+                    
+                    bullet.style.left = `${bossX - bullet.offsetWidth / 2}px`;
+                    bullet.style.top = `${bossY}px`;
+                    bullet.dataset.angle = angle;
+                    
+                    gameContainer.appendChild(bullet);
+                });
+            });
+        }
+
+        function createExplosion(x, y, scale = 1) {
+            const explosion = document.createElement('div');
+            explosion.className = 'explosion';
+            
+            explosion.style.left = `${x + (90 * scale)/2}px`;
+            explosion.style.top = `${y + (90 * scale)/2}px`;
+            explosion.style.width = `${90 * scale}px`;
+            explosion.style.height = `${90 * scale}px`;
+            
+            gameContainer.appendChild(explosion);
+            
+            setTimeout(() => {
+                explosion.remove();
+            }, 700);
+        }
+
+        function takeDamage(damage) {
+            if (isInvincible) return;
+            
+            health = Math.max(0, health - damage);
+            updateHealthDisplay();
+            
+            showDamageNotice(
+                containerWidth / 2,
+                containerHeight / 2
+            );
+            
+            player.style.filter = 'drop-shadow(0 0 15px #ff0000) brightness(1.2)';
+            setTimeout(() => {
+                player.style.filter = 'drop-shadow(0 0 10px #00ffff) brightness(1.1)';
+            }, 300);
+            
+            setInvincible(true);
+            
+            if (health <= 0) {
+                playerDie();
+            }
+        }
+
+        function playerDie() {
+            playerAlive = false;
+            setInvincible(false);
+            createExplosion(player.offsetLeft, player.offsetTop, 1.2);
+            player.remove();
+            deathCount++;
+            
+            // 玩家死亡后，爆炸所有屏幕中的飞机
+            document.querySelectorAll('.enemy').forEach(enemy => {
+                createExplosion(enemy.offsetLeft, enemy.offsetTop, 0.8);
+                enemy.remove();
+            });
+            document.querySelectorAll('[data-is-boss]').forEach(bossContainer => {
+                const boss = bossContainer.querySelector('.boss');
+                createExplosion(boss.offsetLeft, boss.offsetTop, 1.5);
+                bossContainer.remove();
+            });
+            hasBossAlive = false; // 重置BOSS标记
+            // 重置BOSS期间小飞机计数
+            enemySpawnedDuringBoss = 0;
+            
+            if (deathCount >= 3) {
+                gameOver();
+                return;
+            }
+            
+            gameMessage.style.display = 'block';
+            gameMessage.textContent = `复活中...(${deathCount}/2)`;
+            
+            clearInterval(gameLoop);
+            clearInterval(enemySpawnInterval);
+            clearInterval(bossSpawnInterval);
+            clearInterval(enemyShootInterval);
+            clearInterval(bossShootInterval);
+            if (playerShootInterval) {
+                clearInterval(playerShootInterval);
+            }
+            
+            setTimeout(() => {
+                currentPlayerType = currentPlayerType === 'player1' ? 'player2' : 'player1';
+                gameMessage.style.display = 'none';
+                createPlayer();
+                
+                enemySpawnInterval = setInterval(spawnEnemy, enemySpawnRate);
+                bossSpawnInterval = setInterval(spawnBoss, bossSpawnRate);
+                enemyShootInterval = setInterval(enemyShoot, enemyShootRate);
+                bossShootInterval = setInterval(bossShoot, bossShootRate);
+                gameLoop = setInterval(updateGame, 20);
+                playerShootInterval = setInterval(shootBullet, 700);
+            }, 3000);
+        }
+        
+        // 创建庆祝特效（星星粒子）
+        function createConfetti() {
+            // 清除现有特效
+            document.querySelectorAll('.confetti').forEach(el => el.remove());
+            
+            // 创建20个星星粒子
+            for (let i = 0; i < 20; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                // 随机位置
+                confetti.style.left = `${Math.random() * 100}%`;
+                confetti.style.top = '-50px';
+                // 随机大小
+                const size = 5 + Math.random() * 15;
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                // 随机颜色
+                const colors = ['#ffff00', '#ff8800', '#00ffff', '#ffffff', '#ff4444'];
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                // 随机动画时长
+                confetti.style.animationDuration = `${2 + Math.random() * 3}s`;
+                // 随机延迟
+                confetti.style.animationDelay = `${Math.random() * 2}s`;
+                
+                gameOverPanel.appendChild(confetti);
+                
+                // 自动移除
+                setTimeout(() => {
+                    confetti.remove();
+                }, 5000);
+            }
+            
+            // 每隔1秒重新创建，持续5秒
+            let confettiTimer = setInterval(() => {
+                createConfetti();
+            }, 1000);
+            
+            setTimeout(() => {
+                clearInterval(confettiTimer);
+            }, 5000);
+        }
+        
+        function gameOver() {
+            clearInterval(gameLoop);
+            clearInterval(enemySpawnInterval);
+            clearInterval(bossSpawnInterval);
+            clearInterval(enemyShootInterval);
+            clearInterval(bossShootInterval);
+            if (playerShootInterval) {
+                clearInterval(playerShootInterval);
+            }
+            
+            finalScore1.textContent = score1;
+            finalScore2.textContent = score2;
+            
+            // 结算画面胜利方处理
+            if (score1 > score2) {
+                winnerText.textContent = '小十月获胜!';
+                player1Img.classList.add('winner'); // 放大胜利方飞机
+                player2Img.classList.remove('winner');
+                createConfetti(); // 创建庆祝特效
+            } else if (score2 > score1) {
+                winnerText.textContent = '阳阳获胜!';
+                player2Img.classList.add('winner'); // 放大胜利方飞机
+                player1Img.classList.remove('winner');
+                createConfetti(); // 创建庆祝特效
+            } else {
+                winnerText.textContent = '平局!';
+                player1Img.classList.remove('winner');
+                player2Img.classList.remove('winner');
+            }
+            
+            gameOverPanel.style.display = 'flex';
+        }
+
+        function updateScore(points) {
+            // 玩家死亡后不计分
+            if (!playerAlive) return;
+            
+            if (currentPlayerType === 'player1') {
+                score1 += points;
+                score1Display.textContent = score1;
+            } else {
+                score2 += points;
+                score2Display.textContent = score2;
+            }
+        }
+
+        function checkLevelUp() {
+            const totalScore = score1 + score2;
+            const newLevel = Math.floor(totalScore / 500) + 1;
+            if (newLevel > level) {
+                level = newLevel;
+                
+                levelUpText.style.display = 'block';
+                setTimeout(() => {
+                    levelUpText.style.display = 'none';
+                }, 1500);
+                
+                enemySpeed = 3 + (level - 1) * 0.2;
+                bossSpeed = 1 + (level - 1) * 0.1;
+                enemySpawnRate = Math.max(500, 1500 - (level - 1) * 100);
+                bossSpawnRate = Math.max(5000, 10000 - (level - 1) * 500);
+                enemyShootRate = Math.max(1000, 3000 - (level - 1) * 200);
+                bossShootRate = Math.max(800, 1200 - (level - 1) * 20); 
+                
+                clearInterval(enemySpawnInterval);
+                clearInterval(bossSpawnInterval);
+                clearInterval(enemyShootInterval);
+                clearInterval(bossShootInterval);
+                
+                enemySpawnInterval = setInterval(spawnEnemy, enemySpawnRate);
+                bossSpawnInterval = setInterval(spawnBoss, bossSpawnRate);
+                enemyShootInterval = setInterval(enemyShoot, enemyShootRate);
+                bossShootInterval = setInterval(bossShoot, bossShootRate);
+            }
+        }
+
+        function updateGame() {
+            document.querySelectorAll('.enemy').forEach(enemy => {
+                const currentTop = parseFloat(enemy.style.top);
+                enemy.style.top = `${currentTop + enemySpeed}px`;
+                
+                // 敌方飞机到底部后不扣血，仅移除
+                if (currentTop > containerHeight) {
+                    enemy.remove();
+                    return; // 移除原扣血逻辑
+                }
+                
+                if (playerAlive && !isInvincible && checkCollision(player, enemy)) {
+                    takeDamage(1);
+                    createExplosion(enemy.offsetLeft, enemy.offsetTop, 0.8);
+                    enemy.remove();
+                }
+            });
+
+            document.querySelectorAll('[data-is-boss]').forEach(bossContainer => {
+                const boss = bossContainer.querySelector('.boss');
+                const currentTop = parseFloat(bossContainer.style.top);
+                bossContainer.style.top = `${currentTop + bossSpeed}px`;
+                
+                const bossX = parseFloat(bossContainer.style.left);
+                const sinWave = Math.sin(Date.now() / 800) * 3;
+                bossContainer.style.left = `${Math.max(0, Math.min(bossX + sinWave, containerWidth - 250))}px`;
+                
+                if (currentTop > containerHeight) {
+                    takeDamage(2); 
+                    showDamageNotice(parseFloat(bossContainer.style.left), containerHeight - 50);
+                    bossContainer.remove();
+                    hasBossAlive = false; // 重置BOSS标记
+                    enemySpawnedDuringBoss = 0; // 重置小飞机计数
+                }
+                
+                if (playerAlive && !isInvincible && checkCollision(player, boss)) {
+                    takeDamage(1);
+                    createExplosion(boss.offsetLeft, boss.offsetTop, 1);
+                }
+            });
+
+            document.querySelectorAll('.player-bullet').forEach(bullet => {
+                // 修改2：降低子弹飞行速度（从10改为7）
+                const currentTop = parseFloat(bullet.style.top);
+                bullet.style.top = `${currentTop - playerBulletSpeed}px`;
+                
+                if (currentTop < -bullet.offsetHeight) {
+                    bullet.remove();
+                    return;
+                }
+
+                document.querySelectorAll('.enemy').forEach(enemy => {
+                    if (checkCollision(bullet, enemy)) {
+                        bullet.remove();
+                        createExplosion(enemy.offsetLeft, enemy.offsetTop, 0.8);
+                        enemy.remove();
+                        updateScore(10);
+                    }
+                });
+
+                document.querySelectorAll('[data-is-boss]').forEach(bossContainer => {
+                    const boss = bossContainer.querySelector('.boss');
+                    if (checkCollision(bullet, boss)) {
+                        bullet.remove();
+                        createExplosion(bullet.offsetLeft, bullet.offsetTop, 0.6);
+                        
+                        let currentHealth = parseInt(bossContainer.dataset.currentHealth);
+                        const maxHealth = parseInt(bossContainer.dataset.maxHealth);
+                        
+                        currentHealth -= 1;
+                        bossContainer.dataset.currentHealth = currentHealth;
+                        boss.dataset.health = currentHealth;
+                        
+                        const healthBar = bossContainer.querySelector('.boss-health-bar');
+                        const healthPercent = (currentHealth / maxHealth) * 100;
+                        healthBar.style.width = `${healthPercent}%`;
+                        
+                        // BOSS血量为0时销毁（需击中24次）
+                        if (currentHealth <= 0) {
+                            createExplosion(boss.offsetLeft, boss.offsetTop, 1.5);
+                            bossContainer.remove();
+                            hasBossAlive = false; // 重置BOSS标记
+                            enemySpawnedDuringBoss = 0; // 重置小飞机计数
+                            updateScore(300 + level * 30);
+                        }
+                    }
+                });
+            });
+
+            document.querySelectorAll('.enemy-bullet').forEach(bullet => {
+                // 减慢敌方弹道速度（原7 → 5）
+                const currentTop = parseFloat(bullet.style.top);
+                bullet.style.top = `${currentTop + 4}px`;
+                
+                if (currentTop > containerHeight) {
+                    bullet.remove();
+                    return;
+                }
+                
+                if (playerAlive && !isInvincible && checkCollision(player, bullet)) {
+                    takeDamage(1);
+                    createExplosion(bullet.offsetLeft, bullet.offsetTop, 0.7);
+                    bullet.remove();
+                }
+            });
+
+            document.querySelectorAll('.boss-bullet').forEach(bullet => {
+                const currentTop = parseFloat(bullet.style.top);
+                const currentLeft = parseFloat(bullet.style.left);
+                const angle = parseInt(bullet.dataset.angle);
+                
+                const radian = angle * Math.PI / 180;
+                const speed = bossBulletSpeed; // 使用降低后的速度值
+                const dx = Math.tan(radian) * speed;
+                const dy = speed;
+                
+                bullet.style.top = `${currentTop + dy}px`;
+                bullet.style.left = `${currentLeft + dx}px`;
+                
+                if (currentTop > containerHeight || currentLeft < 0 || currentLeft > containerWidth) {
+                    bullet.remove();
+                    return;
+                }
+                
+                if (playerAlive && !isInvincible && checkCollision(player, bullet)) {
+                    takeDamage(1);
+                    createExplosion(bullet.offsetLeft, bullet.offsetTop, 0.8);
+                    bullet.remove();
+                }
+            });
+
+            checkLevelUp();
+        }
+
+        function checkCollision(elem1, elem2) {
+            const rect1 = elem1.getBoundingClientRect();
+            const rect2 = elem2.getBoundingClientRect();
+            
+            rect1.left += rect1.width * 0.2;
+            rect1.right -= rect1.width * 0.2;
+            rect1.top += rect1.height * 0.2;
+            rect1.bottom -= rect1.height * 0.2;
+            
+            return !(
+                rect1.right < rect2.left ||
+                rect1.left > rect2.right ||
+                rect1.bottom < rect2.top ||
+                rect1.top > rect2.bottom
+            );
+        }
+
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
